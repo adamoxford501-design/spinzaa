@@ -15,7 +15,7 @@ CHANNEL_ID = -1003930998102
 CHANNEL_LINK = "https://t.me/Spinzaamain"
 
 # IMPORTANT: Replace this with your exact Netlify URL!
-MINI_APP_URL = "teal-smakager-2b68c7.netlify.app"
+MINI_APP_URL = "https://teal-smakager-2b68c7.netlify.app"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command and prompts user to join the channel."""
