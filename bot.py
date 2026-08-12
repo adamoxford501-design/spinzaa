@@ -15,7 +15,7 @@ CHANNEL_ID = -1003930998102
 CHANNEL_LINK = "https://t.me/Spinzaamain"
 
 # IMPORTANT: Replace this with your exact Netlify URL!
-MINI_APP_URL = "https://teal-smakager-2b68c7.netlify.app"
+MINI_APP_URL = "https://cool-valkyrie-f41870.netlify.app/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command and prompts user to join the channel."""
@@ -55,7 +55,7 @@ async def verify_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
             success_text = (
                 "🎉 <b>Verification Successful!</b>\n\n"
                 "You are now ready to spin the wheel and earn daily cash rewards.\n\n"
-                "<i>🎁 P.S. Keep an eye on the channel, free ₹100 to ₹1000 gift codes are dropped daily!</i>"
+                "<i>🎁 Keep an eye on the channel, free ₹100 to ₹1000 gift codes are dropped daily!</i>"
             )
             
             # Inline button to open the React Web App Mini App inside Telegram
