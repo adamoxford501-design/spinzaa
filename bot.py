@@ -15,7 +15,7 @@ CHANNEL_ID = -1003930998102
 CHANNEL_LINK = "https://t.me/Spinzaamain"
 
 # IMPORTANT: Replace this with your exact Netlify URL!
-MINI_APP_URL = "https://cool-valkyrie-f41870.netlify.app/"
+MINI_APP_URL = "https://superb-lolly-41d792.netlify.app/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command and prompts user to join the channel."""
