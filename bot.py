@@ -1,90 +1,152 @@
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler
-from telegram.error import BadRequest
 
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# Configure logging to see errors in the console
+logging.basicConfig(level=logging.INFO)
 
-# Bot configuration constants
+# Replace with your actual Bot Token
 BOT_TOKEN = "8699495253:AAFPZY3OI39PuOwc1ogl6C4rjhIiJMOopSY"
-CHANNEL_ID = -1003930998102
-CHANNEL_LINK = "https://t.me/Spinzaamain"
+bot = telebot.TeleBot(BOT_TOKEN)
 
-# IMPORTANT: Replace this with your exact Netlify URL!
-MINI_APP_URL = "https://superb-lolly-41d792.netlify.app/"
+# IMPORTANT: Replace this with the URL where your index.html is hosted!
+# Example: "https://your-username.github.io/spinzaa-app/"
+WEBAPP_URL = "https://superb-douhua-eb3833.netlify.app/" 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handles the /start command and prompts user to join the channel."""
-    user = update.effective_user
-    username = user.first_name or "User"
-    
-    welcome_text = (
-        f"<b>Welcome to Spinzaa! {username}</b>\n\n"
-        f"To Start Earning:\n"
-        f"1. Join channel below\n"
-        f"2. Click \"Verify\"\n"
-        f"3. Start Spinning & Earning!\n\n"
-        f"🇮🇳 <b>India's most exciting earning app!</b>\n"
-        f"🎁 <i>Free ₹100 to ₹1000 gift codes will be shared in the channel daily!</i>"
-    )
-    
-    keyboard = [
-        [InlineKeyboardButton("📢 Join Channel", url=CHANNEL_LINK)],
-        [InlineKeyboardButton("✅ Verify", callback_data="verify_membership")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(welcome_text, parse_mode="HTML", reply_markup=reply_markup)
+# Required channels configuration
+REQUIRED_CHANNELS = [
+    {
+        "name": "Spinzaa Main",
+        "link": "https://t.me/Spinzaamain",
+        "id": "-1003930998102" # Make sure the bot is an ADMIN in this channel!
+    },
+    {
+        "name": "Spinzaa Backup",
+        "link": "https://t.me/spinzaabackup",
+        "id": "-1004416499267" # Make sure the bot is an ADMIN in this channel!
+    }
+]
 
-async def verify_membership(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Verifies if the user has joined the Telegram channel."""
-    query = update.callback_query
-    user_id = query.from_user.id
+def check_membership(user_id):
+    """
+    Checks if a user is a member of all required channels.
+    Returns True if subscribed to all, False otherwise.
+    """
+    for channel in REQUIRED_CHANNELS:
+        try:
+            member = bot.get_chat_member(chat_id=channel["id"], user_id=user_id)
+            # 'left' and 'kicked' mean they are not in the channel
+            if member.status in ['left', 'kicked']:
+                return False
+        except Exception as e:
+            logging.error(f"Error checking channel {channel['id']} for user {user_id}: {e}")
+            # If the bot is not an admin in the channel, it will throw an exception.
+            # We return False to prevent access until the bot is made admin.
+            return False
+            
+    return True
+
+def get_join_keyboard():
+    """Generates the inline keyboard prompting users to join the channels."""
+    markup = InlineKeyboardMarkup(row_width=1)
     
-    try:
-        # Check user status in the channel (requires bot to be admin in the channel)
-        chat_member = await context.bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
-        status = chat_member.status
+    # Add a button for each required channel
+    for channel in REQUIRED_CHANNELS:
+        markup.add(InlineKeyboardButton(text=f"📢 Join {channel['name']}", url=channel['link']))
+    
+    # Add the verification button
+    markup.add(InlineKeyboardButton(text="✅ I Have Joined", callback_data="check_join"))
+    return markup
+
+def get_play_keyboard(user_id, start_param=None):
+    """Generates the inline keyboard with the Web App button."""
+    markup = InlineKeyboardMarkup()
+    
+    # Pass the start_param to the Web App URL if it exists (for referrals)
+    final_url = WEBAPP_URL
+    if start_param:
+        # Pass it as tgWebAppStartParam so the frontend can read it
+        final_url = f"{WEBAPP_URL}?tgWebAppStartParam={start_param}"
         
-        # Valid member statuses in Telegram
-        if status in ['member', 'administrator', 'creator']:
-            success_text = (
-                "🎉 <b>Verification Successful!</b>\n\n"
-                "You are now ready to spin the wheel and earn daily cash rewards.\n\n"
-                "<i>🎁 Keep an eye on the channel, free ₹100 to ₹1000 gift codes are dropped daily!</i>"
-            )
-            
-            # Inline button to open the React Web App Mini App inside Telegram
-            keyboard = [
-                [InlineKeyboardButton("🎡 Spin Now", web_app=WebAppInfo(url=MINI_APP_URL))]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            await query.message.edit_text(success_text, parse_mode="HTML", reply_markup=reply_markup)
-        else:
-            await query.answer("❌ You haven't joined the channel yet! Please join first.", show_alert=True)
-            
-    except BadRequest as e:
-        logger.error(f"Error checking channel membership: {e}")
-        # This usually means the bot is not an admin in the channel yet.
-        await query.answer("⚠️ Verification Error. Ensure the bot is an admin in the channel.", show_alert=True)
-    except Exception as e:
-        logger.error(f"Unknown Error: {e}")
-        await query.answer("⚠️ Could not verify right now. Try again later.", show_alert=True)
+    web_app = WebAppInfo(url=final_url)
+    markup.add(InlineKeyboardButton(text="🎮 Play Spinzaa & Earn", web_app=web_app))
+    return markup
 
-def main():
-    """Start the bot."""
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    """Handles the /start command and checks for referral parameters."""
+    user_id = message.from_user.id
+    
+    # Extract referral ID if someone clicked t.me/Spinzaa_Bot?start=123456
+    start_param = None
+    if len(message.text.split()) > 1:
+        start_param = message.text.split()[1]
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(verify_membership, pattern="^verify_membership$"))
+    # Check if the user is in the required channels
+    if check_membership(user_id):
+        # User is already a member, show them the play button
+        welcome_text = (
+            "🎉 *Verification Successful!*\n\n"
+            "You are now ready to spin the wheel and earn daily cash rewards.\n\n"
+            "🎁 Keep an eye on the channel, free ₹100 to ₹1000 gift codes are dropped daily!"
+        )
+        bot.send_message(
+            message.chat.id, 
+            welcome_text, 
+            parse_mode="Markdown", 
+            reply_markup=get_play_keyboard(user_id, start_param)
+        )
+    else:
+        # User needs to join channels
+        join_text = (
+            "Welcome to Spinzaa! —‌‌‌𝙩𝙤𝙗𝙞 ♛\n\n"
+            "To Start Earning:\n"
+            "1. Join channel below\n"
+            "2. Click \"Verify\"\n"
+            "3. Start Spinning & Earning!\n\n"
+            "🇮🇳 India's most exciting earning app!\n"
+            "🎁 Free ₹100 to ₹1000 gift codes will be shared in the channel daily!"
+        )
+        bot.send_message(
+            message.chat.id, 
+            join_text, 
+            parse_mode="Markdown", 
+            reply_markup=get_join_keyboard()
+        )
 
-    print("Spinzaa Telegram Bot is running...")
-    application.run_polling()
+@bot.callback_query_handler(func=lambda call: call.data == "check_join")
+def verify_join(call):
+    """Handles the 'I Have Joined' button click."""
+    user_id = call.from_user.id
+    
+    # Acknowledge the callback immediately to stop the loading spinner on the button
+    bot.answer_callback_query(call.id, "Checking membership...")
+    
+    if check_membership(user_id):
+        # Successfully joined
+        success_text = (
+            "🎉 *Verification Successful!*\n\n"
+            "You are now ready to spin the wheel and earn daily cash rewards.\n\n"
+            "🎁 Keep an eye on the channel, free ₹100 to ₹1000 gift codes are dropped daily!"
+        )
+        # Edit the previous message to replace the join buttons with the play button
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=success_text,
+            parse_mode="Markdown",
+            reply_markup=get_play_keyboard(user_id)
+        )
+    else:
+        # Still not joined
+        bot.send_message(
+            call.message.chat.id, 
+            "❌ *You haven't joined all the channels yet.*\n\nPlease make sure you join using the links provided.",
+            parse_mode="Markdown"
+        )
 
 if __name__ == "__main__":
-    main()
+    print("🤖 Spinzaa Bot is running...")
+    print("⚠️  Ensure you have run: pip install pyTelegramBotAPI")
+    # Start polling for messages
+    bot.infinity_polling()
