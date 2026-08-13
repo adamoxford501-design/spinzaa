@@ -1,2 +1,3 @@
 pyTelegramBotAPI
+pyTelegramBotAPIFlask
 python-telegram-bot>=21.10
