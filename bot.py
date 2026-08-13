@@ -8,7 +8,7 @@ from flask import Flask
 # --- BOT CONFIGURATION ---
 BOT_TOKEN = "8699495253:AAFPZY3OI39PuOwc1ogl6C4rjhIiJMOopSY"
 ADMIN_CHAT_ID = "8457706605"
-WEBAPP_URL = "https://shiny-queijadas-286d46.netlify.app/"  # IMPORTANT: Replace with your actual hosted link!
+WEBAPP_URL = "https://sprightly-dieffenbachia-e8c601.netlify.app/"  # IMPORTANT: Replace with your actual hosted link!
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
