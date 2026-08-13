@@ -12,7 +12,7 @@ BOT_TOKEN = "8699495253:AAFPZY3OI39PuOwc1ogl6C4rjhIiJMOopSY"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # IMPORTANT: Replace this with the exact URL where your index.html is hosted!
-WEBAPP_URL = "https://your-hosted-webapp-url-here.com/" 
+WEBAPP_URL = "https://gentle-pasca-68fdcd.netlify.app/" 
 
 # Channel configuration (Bot MUST be Admin in both channels!)
 REQUIRED_CHANNELS = [
